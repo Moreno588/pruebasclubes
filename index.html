@@ -247,6 +247,24 @@
       return '<span class="val-chip ' + cls + '">' + label + ': ' + estado + '</span>';
     }
 
+    /* ── JSONP — evita CORS completamente ── */
+    function jsonpRequest(url, callback) {
+      var cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+      window[cbName] = function(data) {
+        delete window[cbName];
+        document.head.removeChild(script);
+        callback(null, data);
+      };
+      var script = document.createElement('script');
+      script.onerror = function() {
+        delete window[cbName];
+        document.head.removeChild(script);
+        callback(new Error('Error de conexión'));
+      };
+      script.src = url + (url.indexOf('?') > -1 ? '&' : '?') + 'callback=' + cbName;
+      document.head.appendChild(script);
+    }
+
     /* ── Cargar expedientes ── */
     function cargarExpedientes() {
       var url   = document.getElementById('apiUrl').value.trim();
@@ -257,48 +275,48 @@
       var contenido = document.getElementById('contenido');
       contenido.innerHTML = '<div class="loading"><div class="spinner"></div><br>Cargando expedientes...</div>';
 
-      fetch(url + '?token=' + encodeURIComponent(token))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (!data.ok) {
-            mostrarMsg('Error: ' + (data.error || 'Token inválido'), 'error');
-            contenido.innerHTML = '<div style="text-align:center;padding:40px;color:#991b1b;">❌ ' + (data.error || 'Token inválido o inactivo') + '</div>';
-            return;
-          }
+      var urlApi = url + '?token=' + encodeURIComponent(token);
 
-          datosClub = data;
+      jsonpRequest(urlApi, function(err, data) {
+        if (err || !data) {
+          mostrarMsg('Error de conexión', 'error');
+          contenido.innerHTML = '<div style="text-align:center;padding:40px;color:#991b1b;">❌ Error de conexión.</div>';
+          return;
+        }
+        if (!data.ok) {
+          mostrarMsg('Error: ' + (data.error || 'Token inválido'), 'error');
+          contenido.innerHTML = '<div style="text-align:center;padding:40px;color:#991b1b;">❌ ' + (data.error || 'Token inválido') + '</div>';
+          return;
+        }
 
-          // Header
-          var header = document.getElementById('clubHeader');
-          header.style.display = 'block';
-          document.getElementById('clubNombre').textContent = data.club;
-          document.getElementById('clubComps').textContent  = (data.competiciones || []).join(' · ');
+        datosClub = data;
 
-          var totalJ = 0, totalT = 0;
-          (data.expedientes || []).forEach(function(e) {
-            totalJ += e.totalJugadores || 0;
-            totalT += e.totalTecnicos  || 0;
-          });
-          document.getElementById('clubStats').innerHTML =
-            '<span class="stat-chip">📋 ' + (data.total || 0) + ' Expediente(s)</span>' +
-            '<span class="stat-chip">⚽ ' + totalJ + ' Jugador(es)</span>' +
-            (totalT ? '<span class="stat-chip">👔 ' + totalT + ' Técnico(s)</span>' : '');
+        var header = document.getElementById('clubHeader');
+        header.style.display = 'block';
+        document.getElementById('clubNombre').textContent = data.club;
+        document.getElementById('clubComps').textContent  = (data.competiciones || []).join(' · ');
 
-          if (!data.expedientes || !data.expedientes.length) {
-            contenido.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">No hay expedientes abiertos.</div>';
-            return;
-          }
-
-          contenido.innerHTML = data.expedientes.map(function(exp, ei) {
-            return renderExpediente(exp, ei);
-          }).join('');
-
-          mostrarMsg('✅ ' + data.total + ' expediente(s) cargado(s).', 'ok');
-        })
-        .catch(function(err) {
-          mostrarMsg('Error de conexión: ' + err.message, 'error');
-          contenido.innerHTML = '<div style="text-align:center;padding:40px;color:#991b1b;">❌ Error de conexión. Verifica la URL.</div>';
+        var totalJ = 0, totalT = 0;
+        (data.expedientes || []).forEach(function(e) {
+          totalJ += e.totalJugadores || 0;
+          totalT += e.totalTecnicos  || 0;
         });
+        document.getElementById('clubStats').innerHTML =
+          '<span class="stat-chip">📋 ' + (data.total || 0) + ' Expediente(s)</span>' +
+          '<span class="stat-chip">⚽ ' + totalJ + ' Jugador(es)</span>' +
+          (totalT ? '<span class="stat-chip">👔 ' + totalT + ' Técnico(s)</span>' : '');
+
+        if (!data.expedientes || !data.expedientes.length) {
+          contenido.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">No hay expedientes abiertos.</div>';
+          return;
+        }
+
+        contenido.innerHTML = data.expedientes.map(function(exp, ei) {
+          return renderExpediente(exp, ei);
+        }).join('');
+
+        mostrarMsg('✅ ' + data.total + ' expediente(s) cargado(s).', 'ok');
+      });
     }
 
     /* ── Render expediente ── */
@@ -387,7 +405,7 @@
       '</div>';
     }
 
-    /* ── Enviar comentario (GET para evitar CORS) ── */
+    /* ── Enviar comentario (JSONP — sin CORS) ── */
     function enviarComentario(ei) {
       if (!datosClub) return;
 
@@ -404,8 +422,7 @@
       btn.disabled = true;
       btn.textContent = 'Enviando…';
 
-      // GET con parámetros — evita bloqueo CORS del navegador
-      var urlGet = url
+      var urlApi = url
         + '?token='       + encodeURIComponent(token)
         + '&action=comentario'
         + '&consecutivo=' + encodeURIComponent(exp.consecutivo)
@@ -413,28 +430,25 @@
         + '&nombre='      + encodeURIComponent(nombre)
         + '&comentario='  + encodeURIComponent(comentario);
 
-      fetch(urlGet)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          btn.disabled = false;
-          btn.textContent = '✉️ Enviar comentario';
+      jsonpRequest(urlApi, function(err, data) {
+        btn.disabled = false;
+        btn.textContent = '✉️ Enviar comentario';
 
-          if (!data.ok) {
-            mostrarMsg('Error: ' + (data.error || 'No se pudo enviar'), 'error');
-            return;
-          }
+        if (err || !data) {
+          mostrarMsg('Error de conexión', 'error');
+          return;
+        }
+        if (!data.ok) {
+          mostrarMsg('Error: ' + (data.error || 'No se pudo enviar'), 'error');
+          return;
+        }
 
-          document.getElementById('historial_' + ei).textContent = data.comentarioFinal || '';
-          document.getElementById('comentario_' + ei).value = '';
-          document.getElementById('nombre_' + ei).value = '';
-          datosClub.expedientes[ei].comentariosClub = data.comentarioFinal || '';
-          mostrarMsg('✅ Comentario enviado correctamente.', 'ok');
-        })
-        .catch(function(err) {
-          btn.disabled = false;
-          btn.textContent = '✉️ Enviar comentario';
-          mostrarMsg('Error de conexión: ' + err.message, 'error');
-        });
+        document.getElementById('historial_' + ei).textContent = data.comentarioFinal || '';
+        document.getElementById('comentario_' + ei).value = '';
+        document.getElementById('nombre_' + ei).value = '';
+        datosClub.expedientes[ei].comentariosClub = data.comentarioFinal || '';
+        mostrarMsg('✅ Comentario enviado correctamente.', 'ok');
+      });
     }
 
     function esc(str) {
