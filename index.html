@@ -387,7 +387,7 @@
       '</div>';
     }
 
-    /* ── Enviar comentario ── */
+    /* ── Enviar comentario (GET para evitar CORS) ── */
     function enviarComentario(ei) {
       if (!datosClub) return;
 
@@ -404,43 +404,37 @@
       btn.disabled = true;
       btn.textContent = 'Enviando…';
 
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token:       token,
-          action:      'comentario',
-          consecutivo: exp.consecutivo,
-          competicion: exp.competicion,
-          comentario:  comentario,
-          nombre:      nombre
+      // GET con parámetros — evita bloqueo CORS del navegador
+      var urlGet = url
+        + '?token='       + encodeURIComponent(token)
+        + '&action=comentario'
+        + '&consecutivo=' + encodeURIComponent(exp.consecutivo)
+        + '&competicion=' + encodeURIComponent(exp.competicion)
+        + '&nombre='      + encodeURIComponent(nombre)
+        + '&comentario='  + encodeURIComponent(comentario);
+
+      fetch(urlGet)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          btn.disabled = false;
+          btn.textContent = '✉️ Enviar comentario';
+
+          if (!data.ok) {
+            mostrarMsg('Error: ' + (data.error || 'No se pudo enviar'), 'error');
+            return;
+          }
+
+          document.getElementById('historial_' + ei).textContent = data.comentarioFinal || '';
+          document.getElementById('comentario_' + ei).value = '';
+          document.getElementById('nombre_' + ei).value = '';
+          datosClub.expedientes[ei].comentariosClub = data.comentarioFinal || '';
+          mostrarMsg('✅ Comentario enviado correctamente.', 'ok');
         })
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        btn.disabled = false;
-        btn.textContent = '✉️ Enviar comentario';
-
-        if (!data.ok) {
-          mostrarMsg('Error: ' + (data.error || 'No se pudo enviar'), 'error');
-          return;
-        }
-
-        // Actualizar historial en pantalla
-        document.getElementById('historial_' + ei).textContent = data.comentarioFinal || '';
-        document.getElementById('comentario_' + ei).value = '';
-        document.getElementById('nombre_' + ei).value = '';
-
-        // Actualizar en memoria
-        datosClub.expedientes[ei].comentariosClub = data.comentarioFinal || '';
-
-        mostrarMsg('✅ Comentario enviado correctamente.', 'ok');
-      })
-      .catch(function(err) {
-        btn.disabled = false;
-        btn.textContent = '✉️ Enviar comentario';
-        mostrarMsg('Error de conexión: ' + err.message, 'error');
-      });
+        .catch(function(err) {
+          btn.disabled = false;
+          btn.textContent = '✉️ Enviar comentario';
+          mostrarMsg('Error de conexión: ' + err.message, 'error');
+        });
     }
 
     function esc(str) {
