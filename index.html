@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal Club — Prueba API DIMAYOR</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #004c99;
+      --primary-light: #0063cc;
+      --success: #059669;
+      --danger:  #dc2626;
+      --warning: #d97706;
+      --bg:      #f0f4f8;
+      --card:    #ffffff;
+      --line:    #e2e8f0;
+      --text:    #0f172a;
+      --muted:   #64748b;
+      --soft-blue:   #eff6ff;
+      --soft-green:  #ecfdf5;
+      --soft-orange: #fffbeb;
+      --soft-red:    #fef2f2;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(15,23,42,.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+    /* ── Config panel ── */
+    .config-panel {
+      background: var(--primary);
+      padding: 20px 28px;
+      display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
+    }
+    .config-panel label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: rgba(255,255,255,.7); display: block; margin-bottom: 5px; }
+    .config-panel input {
+      padding: 9px 12px; border: 1px solid rgba(255,255,255,.3);
+      border-radius: 8px; font-family: 'DM Mono', monospace;
+      font-size: 12px; background: rgba(255,255,255,.12);
+      color: #fff; width: 340px; outline: none;
+    }
+    .config-panel input::placeholder { color: rgba(255,255,255,.4); }
+    .config-panel input:focus { border-color: rgba(255,255,255,.7); background: rgba(255,255,255,.18); }
+    .btn {
+      padding: 10px 20px; border: none; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-white { background: #fff; color: var(--primary); }
+    .btn-white:hover { background: #e8f0fe; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-light); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #047857; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Header club ── */
+    .club-header {
+      background: linear-gradient(135deg, #0a1628 0%, #1a3460 100%);
+      padding: 24px 28px;
+      display: none;
+    }
+    .club-name  { font-size: 22px; font-weight: 700; color: #fff; }
+    .club-sub   { font-size: 13px; color: rgba(255,255,255,.6); margin-top: 3px; }
+    .club-stats { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+    .stat-chip  {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+      padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff;
+    }
+
+    /* ── App ── */
+    .app { padding: 24px 28px; max-width: 960px; margin: 0 auto; }
+
+    /* ── Estado ── */
+    #statusMsg {
+      padding: 12px 16px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 600; margin-bottom: 20px; display: none;
+    }
+    #statusMsg.ok    { background: var(--soft-green); color: #166534; border: 1px solid #bbf7d0; }
+    #statusMsg.error { background: var(--soft-red);   color: #991b1b; border: 1px solid #fecaca; }
+    #statusMsg.info  { background: var(--soft-blue);  color: #1248a0; border: 1px solid #bfdbfe; }
+
+    /* ── Expedientes ── */
+    .exp-card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      margin-bottom: 20px; overflow: hidden;
+    }
+    .exp-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      background: #f8fafc;
+    }
+    .exp-consecutivo { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; color: var(--primary); }
+    .exp-club   { font-size: 15px; font-weight: 700; }
+    .exp-sub    { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .badge {
+      display: inline-flex; align-items: center; padding: 3px 9px;
+      border-radius: 999px; font-size: 11px; font-weight: 700; gap: 4px; margin: 2px 3px 2px 0;
+    }
+    .badge-blue   { background: #deeeff; color: #1248a0; }
+    .badge-pink   { background: #fce7f3; color: #9d174d; }
+    .badge-green  { background: var(--soft-green); color: #166534; border: 1px solid #bbf7d0; }
+    .badge-gray   { background: #f1f5f9; color: #475569; }
+    .badge-ok     { background: var(--soft-green);  color: #166534; }
+    .badge-fail   { background: var(--soft-red);    color: #991b1b; }
+    .badge-na     { background: var(--soft-orange); color: #92400e; }
+
+    .exp-body { padding: 16px 20px; }
+
+    /* ── Info grid ── */
+    .info-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+    .info-tile { background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+    .info-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 4px; }
+    .info-value { font-size: 13px; font-weight: 600; }
+
+    /* ── Personas ── */
+    .section-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--muted); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    .persona-card {
+      background: #f8fafc; border: 1px solid var(--line);
+      border-radius: 8px; padding: 12px 14px; margin-bottom: 8px;
+    }
+    .persona-name { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+    .persona-meta { font-size: 12px; color: var(--muted); line-height: 1.8; }
+    .val-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .val-chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .val-chip.ok   { background: var(--soft-green);  color: #166534; border-color: #bbf7d0; }
+    .val-chip.fail { background: var(--soft-red);    color: #991b1b; border-color: #fecaca; }
+    .val-chip.na   { background: var(--soft-orange); color: #92400e; border-color: #fde68a; }
+
+    /* ── Comentarios ── */
+    .comentarios-box {
+      background: var(--soft-green); border: 1px solid #86efac;
+      border-radius: 8px; padding: 14px 16px; margin-top: 14px;
+    }
+    .comentarios-title { font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 8px; }
+    .comentarios-historial {
+      background: #fff; border: 1px solid #86efac; border-radius: 6px;
+      padding: 10px; font-size: 12px; color: var(--muted);
+      white-space: pre-wrap; max-height: 120px; overflow-y: auto;
+      font-family: 'DM Sans', sans-serif; margin-bottom: 10px;
+    }
+    .comentarios-box textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid #86efac;
+      border-radius: 6px; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; resize: vertical; outline: none;
+      background: #fff;
+    }
+    .comentarios-box textarea:focus { border-color: var(--success); box-shadow: 0 0 0 3px rgba(5,150,105,.1); }
+
+    /* ── Dimayor comments (read only) ── */
+    .dimayor-box {
+      background: var(--soft-blue); border: 1px solid #bfdbfe;
+      border-radius: 8px; padding: 14px 16px; margin-top: 10px;
+    }
+    .dimayor-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .dimayor-historial {
+      background: #fff; border: 1px solid #bfdbfe; border-radius: 6px;
+      padding: 10px; font-size: 12px; color: var(--muted);
+      white-space: pre-wrap; max-height: 100px; overflow-y: auto;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* ── Loading ── */
+    .loading { text-align: center; padding: 40px; color: var(--muted); }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 700px) {
+      .config-panel { padding: 16px; }
+      .config-panel input { width: 100%; }
+      .app { padding: 16px; }
+      .info-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Config -->
+  <div class="config-panel">
+    <div>
+      <label>URL de la API</label>
+      <input type="text" id="apiUrl"
+        value="https://script.google.com/macros/s/AKfycbz8_R_ZAm5ZEqtpMF5FKlkXNHJOge_ExwrJTIMb5Ne38HUMY0FvBfzJgge50Jd3a5UA/exec"
+        placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div>
+      <label>Token del club</label>
+      <input type="text" id="apiToken" value="tok-uni-nj2zi1" placeholder="tok-abc-xxxxxx">
+    </div>
+    <button class="btn btn-white" onclick="cargarExpedientes()">
+      🔍 Cargar expedientes
+    </button>
+  </div>
+
+  <!-- Header club (se muestra tras cargar) -->
+  <div class="club-header" id="clubHeader">
+    <div class="exp-club" id="clubNombre" style="font-size:22px;font-weight:700;color:#fff;"></div>
+    <div class="club-sub"  id="clubComps"></div>
+    <div class="club-stats" id="clubStats"></div>
+  </div>
+
+  <div class="app">
+    <div id="statusMsg"></div>
+    <div id="contenido">
+      <div style="text-align:center;padding:60px;color:var(--muted);">
+        <div style="font-size:32px;margin-bottom:12px;">🏟️</div>
+        <div style="font-size:14px;">Ingresa la URL y el token del club para cargar los expedientes.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var datosClub = null;
+
+    /* ── Mostrar mensaje ── */
+    function mostrarMsg(texto, tipo) {
+      var el = document.getElementById('statusMsg');
+      el.textContent = texto;
+      el.className = tipo;
+      el.style.display = 'block';
+      setTimeout(function() { el.style.display = 'none'; }, 4000);
+    }
+
+    /* ── Normalizar estado validación ── */
+    function normalizarEstado(val) {
+      var v = String(val || '').trim().toLowerCase();
+      if (v === 'cumple')    return 'Cumple';
+      if (v === 'no cumple') return 'No cumple';
+      return 'N/A';
+    }
+
+    function chipVal(label, val) {
+      var estado = normalizarEstado(val);
+      var cls = estado === 'Cumple' ? 'ok' : estado === 'No cumple' ? 'fail' : 'na';
+      return '<span class="val-chip ' + cls + '">' + label + ': ' + estado + '</span>';
+    }
+
+    /* ── Cargar expedientes ── */
+    function cargarExpedientes() {
+      var url   = document.getElementById('apiUrl').value.trim();
+      var token = document.getElementById('apiToken').value.trim();
+
+      if (!url || !token) { mostrarMsg('Ingresa la URL y el token.', 'error'); return; }
+
+      var contenido = document.getElementById('contenido');
+      contenido.innerHTML = '<div class="loading"><div class="spinner"></div><br>Cargando expedientes...</div>';
+
+      fetch(url + '?token=' + encodeURIComponent(token))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.ok) {
+            mostrarMsg('Error: ' + (data.error || 'Token inválido'), 'error');
+            contenido.innerHTML = '<div style="text-align:center;padding:40px;color:#991b1b;">❌ ' + (data.error || 'Token inválido o inactivo') + '</div>';
+            return;
+          }
+
+          datosClub = data;
+
+          // Header
+          var header = document.getElementById('clubHeader');
+          header.style.display = 'block';
+          document.getElementById('clubNombre').textContent = data.club;
+          document.getElementById('clubComps').textContent  = (data.competiciones || []).join(' · ');
+
+          var totalJ = 0, totalT = 0;
+          (data.expedientes || []).forEach(function(e) {
+            totalJ += e.totalJugadores || 0;
+            totalT += e.totalTecnicos  || 0;
+          });
+          document.getElementById('clubStats').innerHTML =
+            '<span class="stat-chip">📋 ' + (data.total || 0) + ' Expediente(s)</span>' +
+            '<span class="stat-chip">⚽ ' + totalJ + ' Jugador(es)</span>' +
+            (totalT ? '<span class="stat-chip">👔 ' + totalT + ' Técnico(s)</span>' : '');
+
+          if (!data.expedientes || !data.expedientes.length) {
+            contenido.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">No hay expedientes abiertos.</div>';
+            return;
+          }
+
+          contenido.innerHTML = data.expedientes.map(function(exp, ei) {
+            return renderExpediente(exp, ei);
+          }).join('');
+
+          mostrarMsg('✅ ' + data.total + ' expediente(s) cargado(s).', 'ok');
+        })
+        .catch(function(err) {
+          mostrarMsg('Error de conexión: ' + err.message, 'error');
+          contenido.innerHTML = '<div style="text-align:center;padding:40px;color:#991b1b;">❌ Error de conexión. Verifica la URL.</div>';
+        });
+    }
+
+    /* ── Render expediente ── */
+    function renderExpediente(exp, ei) {
+      var campos = [
+        { key: 'declaracion',        label: 'Declaración' },
+        { key: 'documentoIdentidad', label: 'Doc. Identidad' },
+        { key: 'derechos',           label: 'Derechos' },
+        { key: 'imagen',             label: 'Imagen' },
+        { key: 'dopaje',             label: 'Dopaje' },
+        { key: 'consentimiento',     label: 'Consentimiento' },
+        { key: 'seminario',          label: 'Seminario' },
+        { key: 'coced',              label: 'COCED' },
+        { key: 'licencia',           label: 'Licencia' },
+        { key: 'tarjetaPro',         label: 'Tarjeta Pro.' },
+        { key: 'estudios',           label: 'Estudios' },
+        { key: 'contrato',           label: 'Contrato' }
+      ];
+
+      var personasHTML = (exp.personas || []).map(function(p) {
+        var chips = campos.map(function(c) {
+          return chipVal(c.label, p[c.key]);
+        }).join('');
+
+        return '<div class="persona-card">' +
+          '<div class="persona-name">' + esc(p.nombre || '') +
+            ' <span class="badge ' + (p.tipoJT === 'Jugador' ? 'badge-blue' : 'badge-pink') + '">' + esc(p.tipoJT || '') + '</span>' +
+          '</div>' +
+          '<div class="persona-meta">' +
+            '<strong>Doc:</strong> ' + esc(p.documento || '—') +
+            (p.numeroCamiseta ? ' &nbsp;·&nbsp; <strong>Camiseta:</strong> ' + esc(String(p.numeroCamiseta)) : '') +
+            ' &nbsp;·&nbsp; <strong>Nac:</strong> ' + esc(String(p.fechaNacimiento || '—')) +
+            ' &nbsp;·&nbsp; <strong>País:</strong> ' + esc(String(p.nacionalidad || '—')) +
+          '</div>' +
+          '<div class="val-chips">' + chips + '</div>' +
+        '</div>';
+      }).join('');
+
+      var historialDimayor = exp.comentariosDimayor
+        ? '<div class="dimayor-box">' +
+            '<div class="dimayor-title">📋 Comentarios DIMAYOR (solo lectura)</div>' +
+            '<div class="dimayor-historial">' + esc(exp.comentariosDimayor) + '</div>' +
+          '</div>'
+        : '';
+
+      var historialEquipo = exp.comentariosClub || 'Sin comentarios enviados aún.';
+
+      return '<div class="exp-card">' +
+        '<div class="exp-header">' +
+          '<div>' +
+            '<div class="exp-consecutivo">#' + esc(exp.consecutivo || '') + '</div>' +
+            '<div class="exp-club">' + esc(exp.club || '') + '</div>' +
+            '<div class="exp-sub">' + esc(exp.competicion || '') + ' · ' + esc(exp.tipoSolicitud || '') + ' · ' + esc(exp.tipoInscripcion || '') + '</div>' +
+          '</div>' +
+          '<div>' +
+            (exp.totalJugadores ? '<span class="badge badge-blue">' + exp.totalJugadores + ' Jugador(es)</span>' : '') +
+            (exp.totalTecnicos  ? '<span class="badge badge-pink">' + exp.totalTecnicos  + ' Técnico(s)</span>'  : '') +
+            '<span class="badge badge-green">Abierto</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="exp-body">' +
+          '<div class="info-grid">' +
+            '<div class="info-tile"><div class="info-label">Responsable</div><div class="info-value">' + esc(exp.responsable || 'Sin asignar') + '</div></div>' +
+            '<div class="info-tile"><div class="info-label">Jugadores</div><div class="info-value">' + (exp.totalJugadores || 0) + '</div></div>' +
+            '<div class="info-tile"><div class="info-label">Total personas</div><div class="info-value">' + (exp.totalPersonas || 0) + '</div></div>' +
+          '</div>' +
+
+          '<div class="section-title">Personas y validaciones</div>' +
+          personasHTML +
+
+          historialDimayor +
+
+          '<div class="comentarios-box">' +
+            '<div class="comentarios-title">💬 Comentarios del Club</div>' +
+            '<div class="comentarios-historial" id="historial_' + ei + '">' + esc(historialEquipo) + '</div>' +
+            '<input type="text" id="nombre_' + ei + '" placeholder="Tu nombre completo…" style="width:100%;padding:10px 12px;border:1px solid #86efac;border-radius:6px;font-family:\'DM Sans\',sans-serif;font-size:13px;margin-bottom:8px;outline:none;background:#fff;">' +
+            '<textarea id="comentario_' + ei + '" rows="3" placeholder="Escribe tu comentario aquí…"></textarea>' +
+            '<div style="margin-top:8px;display:flex;justify-content:flex-end;">' +
+              '<button class="btn btn-success" onclick="enviarComentario(' + ei + ')">' +
+                '✉️ Enviar comentario' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+
+        '</div>' +
+      '</div>';
+    }
+
+    /* ── Enviar comentario ── */
+    function enviarComentario(ei) {
+      if (!datosClub) return;
+
+      var url        = document.getElementById('apiUrl').value.trim();
+      var token      = document.getElementById('apiToken').value.trim();
+      var exp        = datosClub.expedientes[ei];
+      var nombre     = document.getElementById('nombre_' + ei).value.trim();
+      var comentario = document.getElementById('comentario_' + ei).value.trim();
+
+      if (!nombre)     { mostrarMsg('Ingresa tu nombre antes de enviar.', 'error'); return; }
+      if (!comentario) { mostrarMsg('Escribe un comentario antes de enviar.', 'error'); return; }
+
+      var btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Enviando…';
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token:       token,
+          action:      'comentario',
+          consecutivo: exp.consecutivo,
+          competicion: exp.competicion,
+          comentario:  comentario,
+          nombre:      nombre
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        btn.disabled = false;
+        btn.textContent = '✉️ Enviar comentario';
+
+        if (!data.ok) {
+          mostrarMsg('Error: ' + (data.error || 'No se pudo enviar'), 'error');
+          return;
+        }
+
+        // Actualizar historial en pantalla
+        document.getElementById('historial_' + ei).textContent = data.comentarioFinal || '';
+        document.getElementById('comentario_' + ei).value = '';
+        document.getElementById('nombre_' + ei).value = '';
+
+        // Actualizar en memoria
+        datosClub.expedientes[ei].comentariosClub = data.comentarioFinal || '';
+
+        mostrarMsg('✅ Comentario enviado correctamente.', 'ok');
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = '✉️ Enviar comentario';
+        mostrarMsg('Error de conexión: ' + err.message, 'error');
+      });
+    }
+
+    function esc(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+  </script>
+</body>
+</html>
