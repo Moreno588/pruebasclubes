@@ -382,6 +382,8 @@
             '<div class="info-tile"><div class="info-label">Responsable</div><div class="info-value">' + esc(exp.responsable || 'Sin asignar') + '</div></div>' +
             '<div class="info-tile"><div class="info-label">Jugadores</div><div class="info-value">' + (exp.totalJugadores || 0) + '</div></div>' +
             '<div class="info-tile"><div class="info-label">Total personas</div><div class="info-value">' + (exp.totalPersonas || 0) + '</div></div>' +
+            '<div class="info-tile"><div class="info-label">📅 Fecha apertura</div><div class="info-value">' + esc(exp.fechaApertura || '—') + '</div></div>' +
+            (exp.fechaCierre ? '<div class="info-tile"><div class="info-label">🔒 Fecha cierre</div><div class="info-value" style="color:#dc2626;font-weight:700;">' + esc(exp.fechaCierre) + '</div></div>' : '') +
           '</div>' +
 
           '<div class="section-title">Personas y validaciones</div>' +
