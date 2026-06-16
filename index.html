@@ -192,16 +192,25 @@
     <div>
       <label>URL de la API</label>
       <input type="text" id="apiUrl"
-        value="https://script.google.com/macros/s/AKfycbz8_R_ZAm5ZEqtpMF5FKlkXNHJOge_ExwrJTIMb5Ne38HUMY0FvBfzJgge50Jd3a5UA/exec"
+        value="https://script.google.com/macros/s/AKfycbxQJV-pyK97Qolwd1BujbkBMTp4fML1j6giPZ4q3LlmAW05Yo3wEkhdv3ZTqdTHYwWX/exec"
         placeholder="https://script.google.com/macros/s/...">
     </div>
     <div>
       <label>Token del club</label>
-      <input type="text" id="apiToken" value="tok-uni-nj2zi1" placeholder="tok-abc-xxxxxx">
+      <input type="text" id="apiToken" value="tok-uni-nj2zi1" placeholder="tok-abc-xxxxxx"
+        onkeydown="if(event.key==='Enter') cargarExpedientes()">
     </div>
     <button class="btn btn-white" onclick="cargarExpedientes()">
       🔍 Cargar expedientes
     </button>
+    <button class="btn btn-white" onclick="limpiar()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);">
+      ✖ Limpiar
+    </button>
+  </div>
+  <!-- Barra de info sistema -->
+  <div style="background:#003578;padding:8px 28px;font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>🔗 Sistema Inscripciones DIMAYOR · Powered by Google Cloud Firestore</span>
+    <span id="ultimaActualizacion" style="font-family:'DM Mono',monospace;">—</span>
   </div>
 
   <!-- Header club (se muestra tras cargar) -->
@@ -316,6 +325,7 @@
         }).join('');
 
         mostrarMsg('✅ ' + data.total + ' expediente(s) cargado(s).', 'ok');
+        actualizarTimestamp();
       });
     }
 
@@ -379,7 +389,7 @@
         '</div>' +
         '<div class="exp-body">' +
           '<div class="info-grid">' +
-            '<div class="info-tile"><div class="info-label">Responsable</div><div class="info-value">' + esc(exp.responsable || 'Sin asignar') + '</div></div>' +
+            '<div class="info-tile"><div class="info-label">Responsable</div><div class="info-value">' + esc(exp.responsableSolicitud || 'Sin asignar') + '</div></div>' +
             '<div class="info-tile"><div class="info-label">Jugadores</div><div class="info-value">' + (exp.totalJugadores || 0) + '</div></div>' +
             '<div class="info-tile"><div class="info-label">Total personas</div><div class="info-value">' + (exp.totalPersonas || 0) + '</div></div>' +
             '<div class="info-tile"><div class="info-label">📅 Fecha apertura</div><div class="info-value">' + esc(exp.fechaApertura || '—') + '</div></div>' +
@@ -453,10 +463,31 @@
       });
     }
 
+    function limpiar() {
+      datosClub = null;
+      document.getElementById('clubHeader').style.display = 'none';
+      document.getElementById('contenido').innerHTML =
+        '<div style="text-align:center;padding:60px;color:var(--muted);">' +
+        '<div style="font-size:32px;margin-bottom:12px;">🏟️</div>' +
+        '<div style="font-size:14px;">Ingresa la URL y el token del club para cargar los expedientes.</div>' +
+        '</div>';
+      document.getElementById('apiToken').value = '';
+      document.getElementById('apiToken').focus();
+    }
+
     function esc(str) {
       return String(str)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
         .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    // Mostrar timestamp última carga
+    function actualizarTimestamp() {
+      var el = document.getElementById('ultimaActualizacion');
+      if (el) {
+        var now = new Date();
+        el.textContent = 'Última carga: ' + now.toLocaleTimeString('es-CO');
+      }
     }
   </script>
 </body>
